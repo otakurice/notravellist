@@ -14,8 +14,11 @@
 - 一个逗比&懵逼的妹几
 
 简书：http://www.jianshu.com/u/8e45f2f3b6c1
+
 知乎：https://www.zhihu.com/people/otakurice
+
 微信公众号：大吉大利小米酱
+
 python交流群：613176398
 
 #### 2017.10
