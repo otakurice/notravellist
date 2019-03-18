@@ -1,156 +1,76 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #_*_ coding: utf-8_*_
-import time,requests,urllib2,json,re
-from bs4 import BeautifulSoup
-from lxml import etree
-from collections import OrderedDict
-import pandas as pd
-import xlwt
-
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
+import time,requests, re #time用于延时，requests用于请求网页数据，json转换json数据格式，re正则
+from lxml import etree #解析xpath网页结构
+import pandas as pd #处理表格进行数据分析
 
 def getPage(url):#获取链接中的网页内容
+    # 网络请求时需要包含较为完整的headers(请求头)
+    # 这里的headers就是requests header的内容
+    # 除了cookie 和 user-agent其他都和我的电脑一样
     headers = {
-       'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'
+        'Accept':'application/json, text/javascript, */*; q=0.01',
+        'Accept-Encoding':'gzip, deflate',
+        'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8',
+        'Connection':'keep-alive',
+        'cookie':'填写cookies',
+        'Host':'piao.qunar.com',
+        'Referer':'http://piao.qunar.com/ticket/list.htm?keyword=%E7%83%AD%E9%97%'
+                  'A8%E6%99%AF%E7%82%B9&region=&from=mpl_search_suggest',
+        'User-Agent':'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36'
+                     ' (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36',
+        'X-Requested-With':'XMLHttpRequest'
     }
     try:
-        request = urllib2.Request(url = url, headers = headers)
-        response = urllib2.urlopen(request, timeout = 5)
-        page = response.read().decode('utf-8')
+        page = requests.get(url,headers = headers) # 这里是请求网页数据了
         return page
-    except (urllib2.URLError,Exception), e:
-        if hasattr(e, 'reason'):
-            print '抓取失败，具体原因：', e.reason
-            request = urllib2.Request(url = url, headers = headers)
-            response = urllib2.urlopen(request,timeout = 5)
-            page = response.read().decode('utf-8')
-            return page
+    except Exception as e:
+        print(str(e))
 
 def getList():
-	place = raw_input('请输入想搜索的区域、类型(如北京、热门景点等)：')
-	url = 'http://piao.qunar.com/ticket/list.htm?keyword='+ str(place) +'&region=&from=mpl_search_suggest&page={}'
-	i = 1
-	sightlist = []
-	while i < 2:
-		page = getPage(url.format(i))
-		selector = etree.HTML(page)
-		print '正在爬取第' + str(i) + '页景点信息'
-		i+=1
-		informations = selector.xpath('//div[@class="result_list"]/div')
-		for inf in informations: #获取必要信息
-			sight_name = inf.xpath('./div/div/h3/a/text()')[0]
-			sight_level = inf.xpath('.//span[@class="level"]/text()')
-			if len(sight_level):
-				sight_level = sight_level[0].replace('景区','')
-			else:
-				sight_level = 0
-			sight_area = inf.xpath('.//span[@class="area"]/a/text()')[0]
-			sight_hot = inf.xpath('.//span[@class="product_star_level"]//span/text()')[0].replace('热度 ','')
-			sight_add = inf.xpath('.//p[@class="address color999"]/span/text()')[0]
-			sight_add = re.sub('地址：|（.*?）|\(.*?\)|，.*?$|\/.*?$','',str(sight_add))
-			sight_slogen = inf.xpath('.//div[@class="intro color999"]/text()')[0]
-			sight_price = inf.xpath('.//span[@class="sight_item_price"]/em/text()')
-			if len(sight_price):
-				sight_price = sight_price[0]
-			else:
-				i = 0
-				break
-			sight_soldnum = inf.xpath('.//span[@class="hot_num"]/text()')[0]
-			sight_point = inf.xpath('./@data-point')[0]
-			print sight_point
-			sight_url = inf.xpath('.//h3/a[@class="name"]/@href')[0]
-			sightlist.append([sight_name,sight_level,sight_area,float(sight_price),int(sight_soldnum),float(sight_hot),sight_add.replace('地址：',''),sight_point,sight_slogen,sight_url])
-		time.sleep(3)
-	return sightlist,place
+    place = '热门景点'
+    url = 'http://piao.qunar.com/ticket/list.htm?keyword='+ place +'&region=&from=mpl_search_suggest&page={}'
+    i = 1
+    sightlist = []
+    while i < 150:
+        page = getPage(url.format(i)) #这里调用了getPage函数获取了网页数据
+        selector = etree.HTML(page.text)
+        print('正在爬取第', str(i), '页景点信息')
+        i += 1
+        informations = selector.xpath('//div[@class="result_list"]/div')
+        for inf in informations: #获取必要信息
+            sight_name = inf.xpath('./div/div/h3/a/text()')[0]
+            sight_level = inf.xpath('.//span[@class="level"]/text()')
+            if len(sight_level):
+                sight_level = sight_level[0].replace('景区','')
+            else:
+                sight_level = 0
+            sight_area = inf.xpath('.//span[@class="area"]/a/text()')[0]
+            print(sight_area)
+            sight_hot = inf.xpath('.//span[@class="product_star_level"]//span/text()')[0].replace('热度 ','')
+            sight_add = inf.xpath('.//p[@class="address color999"]/span/text()')[0]
+            sight_add = re.sub('地址：|（.*?）|\(.*?\)|，.*?$|\/.*?$','',str(sight_add))
+            sight_slogen = inf.xpath('.//div[@class="intro color999"]/text()')[0]
+            sight_price = inf.xpath('.//span[@class="sight_item_price"]/em/text()')
+            if len(sight_price):
+                sight_price = sight_price[0]
+            else:
+                i = 0
+                break
+            sight_soldnum = inf.xpath('.//span[@class="hot_num"]/text()')[0]
+            sight_point = inf.xpath('./@data-point')[0]
+            sight_url = inf.xpath('.//h3/a[@class="name"]/@href')[0]
+            sightlist.append([sight_name,sight_level,sight_area,float(sight_price),int(sight_soldnum),float(sight_hot),sight_add.replace('地址：',''),sight_point,sight_slogen,sight_url])
+        time.sleep(10)
+    return sightlist
 
 def listToExcel(list,name):
-	df = pd.DataFrame(list,columns=['景点名称','级别','所在区域','起步价','销售量','热度','地址','经纬度','标语','详情网址'])
-	df.to_excel(name + '景点信息.xlsx')
-
-def datatojson(sightlist):  #直接生成json数据
-	json_geo = {}
-	bjsonlist = []
-	ejsonlist1 = []
-	ejsonlist2 = []
-	num = 1
-	for l in sightlist:
-		p = '(.*?),(.*?)$'
-		geo = re.findall(p,l[7])[0]
-		json_geo['lat'] = geo[1]
-		json_geo['count'] = l[4]/100
-		json_geo['lng'] = geo[0]
-		bjsonlist.append(json_geo)
-		print '正在生成第' + str(num) + '个景点的经纬度'
-		ejson1 = {l[0] : [geo[0],geo[1]]}
-		ejsonlist1 = dict(ejsonlist1,**ejson1)
-		ejson2 = {'name' : l[0],'value' : l[4]/100}
-		ejsonlist2.append(ejson2)
-		num +=1
-	bjsonlist =json.dumps(bjsonlist)
-	ejsonlist1 = json.dumps(ejsonlist1,ensure_ascii=False)
-	ejsonlist2 = json.dumps(ejsonlist2,ensure_ascii=False)
-	with open('./points.json',"w") as f:
-		f.write(bjsonlist)
-	with open('./geoCoordMap.json',"w") as f:
-		f.write(ejsonlist1)
-	with open('./data.json',"w") as f:
-		f.write(ejsonlist2)
-
-# def getBaiduGeo(sightlist,name): #通过百度地图API获取经纬度并生成json数据
-# 	ak = '你的百度密钥'
-# 	headers = {
-# 	'User-Agent' :'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36'
-# 	}
-# 	list = sightlist
-# 	bjsonlist = []
-# 	ejsonlist1 = []
-# 	ejsonlist2 = []
-# 	num = 1
-# 	for l in list:
-# 		try:
-# 			try:
-# 				try:
-# 					address = l[6]
-# 					url = 'http://api.map.baidu.com/geocoder/v2/?address=' + address  + '&output=json&ak=' + ak
-# 					json_data = requests.get(url = url).json()
-# 					json_geo = json_data['result']['location']
-# 				except KeyError,e:
-# 					address = l[0]
-# 					url = 'http://api.map.baidu.com/geocoder/v2/?address=' + address  + '&output=json&ak=' + ak
-# 					json_data = requests.get(url = url).json()
-# 					json_geo = json_data['result']['location']
-# 			except KeyError,e:
-# 					address = l[2]
-# 					url = 'http://api.map.baidu.com/geocoder/v2/?address=' + address  + '&output=json&ak=' + ak
-# 					json_data = requests.get(url = url).json()
-# 					json_geo = json_data['result']['location']
-# 		except KeyError,e:
-# 			continue
-# 		json_geo['count'] = l[4]/100
-# 		bjsonlist.append(json_geo)
-# 		ejson1 = {l[0] : [json_geo['lng'],json_geo['lat']]}
-# 		ejsonlist1 = dict(ejsonlist1,**ejson1)
-# 		ejson2 = {'name' : l[0],'value' : l[4]/100}
-# 		ejsonlist2.append(ejson2)
-# 		print '正在生成第' + str(num) + '个景点的经纬度'
-# 		num +=1
-# 	bjsonlist =json.dumps(bjsonlist)
-# 	ejsonlist1 = json.dumps(ejsonlist1,ensure_ascii=False)
-# 	ejsonlist2 = json.dumps(ejsonlist2,ensure_ascii=False)
-# 	with open('./points.json',"w") as f:
-# 		f.write(bjsonlist)
-# 	with open('./geoCoordMap.json',"w") as f:
-# 		f.write(ejsonlist1)
-# 	with open('./data.json',"w") as f:
-# 		f.write(ejsonlist2)
+    df = pd.DataFrame(list,columns=['景点名称','级别','所在区域','起步价','销售量','热度','地址','经纬度','标语','详情网址'])
+    df.to_csv(name + ".csv", sep=',')
 
 def main():
-	sightlist,place = getList()
-	listToExcel(sightlist,place)
-	datatojson(sightlist)
-	# getBaiduGeo(sightlist,place)
+    sightlist = getList() # main后第一个运行getList()
+    listToExcel(sightlist,'hotplace')
 
-if __name__=='__main__':
+if __name__=='__main__': # 代码是从main函数开始的
 	main()
