@@ -33,4 +33,4 @@
 *   QQ：616814925(请注明联系目的)
 
 如果你觉得我写得东西对你有所帮助，可以扫描下面的打(yao)赏(fan)二维码给我微信转账支持我，谢谢~
-![](assets/README-8304749f.JPG)
+![](https://upload-images.jianshu.io/upload_images/5588611-d4bd4e040ed0e02c.jpeg?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
