@@ -5,7 +5,7 @@
 - 对echarts进行修改可引入本地json文件
 
 #### 博客
-- 代码可结合简书博客阅读：https://mp.weixin.qq.com/s/5uYSK5txNWCxD6o740_NGQ
+- 代码可结合博客阅读：https://mp.weixin.qq.com/s/5uYSK5txNWCxD6o740_NGQ
 
 #### 关于我
 - 一个特别擅长不务正业的人
